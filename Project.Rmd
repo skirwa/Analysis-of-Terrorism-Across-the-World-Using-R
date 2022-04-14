@@ -1,0 +1,78 @@
+---
+title: "Project"
+author: "Sharon and Catherine"
+date: '2022-04-14'
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+This project seeks to understand how terrorism has impacted the world.
+The following questions will be used to understand the dataset;
+1. Has global terrorism reduced or increased over the years?(line chart)
+2. How do terrorism fatalities compare across countries in the world? (Choropleth map)
+3. Which region has highly been affected by terrorism?
+4. What’s the happiness index and GDP of the country highly affected by terrorism? Compare
+
+## Load Packages and Import Data
+The chunk below contains the packages that will be needed for this project.
+
+```{r Load Packages}
+#Load necessary packages
+library(tidyverse) #For performing data transformation
+library(ggplot2) #For creating charts
+library(readr) #For importing data
+library(dplyr) #For performing data transformation
+```
+
+```{r Import Data}
+#Import dataset containing terrorism fatalities
+terrorism_fatalities <- read_csv("fatalities-from-terrorism.csv")
+```
+
+```{r Display Dataset}
+#Display the first five rows of the imported dataset
+head(terrorism_fatalities)
+```
+
+##Data Transformation
+
+Check for the number of rows and columns
+```{r Number of rows}
+nrow(terrorism_fatalities)
+```
+
+```{r Number of columns}
+ncol(terrorism_fatalities)
+```
+
+
+```{r Missing Values}
+#Check for missing values
+sum(is.na(terrorism_fatalities))
+```
+
+The terrorism fatalities dataset has 153 missing values. Given that the dataset has 3814 entries, 
+
+
+
+
+
+
+
