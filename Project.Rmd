@@ -33,7 +33,7 @@ The following questions will be used to understand the dataset;
 ## Load Packages and Import Data
 The chunk below contains the packages that will be needed for this project.
 
-```{r Load Packages}
+```{r Load Packages, message=FALSE}
 #Load necessary packages
 library(tidyverse) #For performing data transformation
 library(ggplot2) #For creating charts
@@ -41,35 +41,138 @@ library(readr) #For importing data
 library(dplyr) #For performing data transformation
 ```
 
-```{r Import Data}
+```{r Import Data, message = FALSE}
 #Import dataset containing terrorism fatalities
-terrorism_fatalities <- read_csv("fatalities-from-terrorism.csv")
+terrorism_fatalities <- readr::read_csv("fatalities-from-terrorism.csv", show_col_types = FALSE)
 ```
 
 ```{r Display Dataset}
 #Display the first five rows of the imported dataset
+as_tibble(terrorism_fatalities)
 head(terrorism_fatalities)
 ```
 
 ##Data Transformation
 
 Check for the number of rows and columns
-```{r Number of rows}
+```{r Rows}
+#Number of rows
 nrow(terrorism_fatalities)
 ```
 
-```{r Number of columns}
+```{r Columns}
+#Number of columns
 ncol(terrorism_fatalities)
 ```
 
 
 ```{r Missing Values}
 #Check for missing values
-sum(is.na(terrorism_fatalities))
+#sum(is.na(terrorism_fatalities))
+
+colSums(is.na(terrorism_fatalities))
 ```
 
-The terrorism fatalities dataset has 153 missing values. Given that the dataset has 3814 entries, 
+The terrorism fatalities dataset has no missing values.
 
+Check for unique values in the 'Entity' column.
+```{r}
+#Unique values in the dataset
+unique(terrorism_fatalities[c("Entity")])
+```
+
+Rename 'Entity' column to 'Country'.
+```{r Rename}
+terrorism_fatalities <- terrorism_fatalities %>%
+  rename(Country = Entity)
+```
+
+Summary statistics
+```{r Summary}
+summary_stat <- terrorism_fatalities %>% 
+  group_by(Country) %>%
+  summarise(
+    count = n(),
+    avg = mean(Fatalities),
+    minimum = min(Fatalities),
+    maximum = max(Fatalities)
+  ) %>% 
+  arrange()
+summary_stat
+
+```
+
+
+Since our dataset is tidy, we will go ahead and analyse our data based on our research questions.
+###1. Which region has highly been affected by terrorism?
+
+Reorder the dataset to check which country has had the highest number of fatalities as a result of terrorism
+
+```{r Arrange}
+terrorism_fatalities %>% 
+  group_by(Country) %>% 
+  summarise(maximum = max(Fatalities)) %>% 
+  arrange(desc(maximum)) #Ordering the values from the highest to the lowest
+```
+
+From the tibble above, we can see that Iraq has had the highest number of fatalities resulting from terrorism, followed by Nigeria then Afghanistan.
+
+###2. Has global terrorism reduced or increased over the years?(line chart)
+
+
+###3. How do terrorism fatalities compare across countries in the world? (Choropleth map)
+
+
+Compute the average terrorism rate for each country
+```{r}
+terrorism_fatalities <- terrorism_global %>% 
+  group_by(Entity) %>% 
+  summarise(Fatalities=mean(Fatalities, na.rm = TRUE))
+```
+
+Rename 'Entity' column to 'region'.
+```{r Rename}
+terrorism_fatalities <- terrorism_fatalities %>%
+  rename(region = Entity)
+```
+
+Visualize
+```{r Choropleth Map}
+library(ggplot2)
+library(dplyr)
+#library(ggrepel)
+terrorism_fatalities <- as.data.frame(terrorism_fatalities)
+
+global_map <- map_data("world")
+
+merged_data <- left_join(global_map, terrorism_fatalities, by = "region")
+#joined_data <- merged_data %>% filter(!is.na(fact_join$Fatalities))
+
+#options(ggrepel.max.overlaps = Inf)
+ggplot(merged_data, aes(long, lat, label = region ,group = group))+
+  #geom_text_repel(segment.alpha = 0)+
+  geom_polygon(aes(fill = Fatalities), color = "white")+
+  ggtitle("Fatalities Resulting From Terrorism Activities Across the World")+
+  scale_fill_viridis_c(option = "C")+
+  theme(#panel.background = element_rect(fill = "white"),
+        #plot.background = element_rect(fill = "white"),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.ticks = element_blank(),
+        #rect = element_blank(),
+        #panel.border =  element_blank(),
+        legend.title= element_text(
+          hjust = 0.4 ,vjust=0.3, size=10,family = "Times"),
+        legend.text = element_text(
+          hjust = 0.4 ,vjust=2, size=8,family = "Times"))
+  
+
+```
+
+
+4. What’s the happiness index and GDP of the country highly affected by terrorism? Compare
 
 
 
