@@ -109,48 +109,129 @@ Since our dataset is tidy, we will go ahead and analyse our data based on our re
 Reorder the dataset to check which country has had the highest number of fatalities as a result of terrorism
 
 ```{r Arrange}
-terrorism_fatalities %>% 
-  group_by(Country) %>% 
+highest <- terrorism_fatalities %>% 
+  group_by(Country) %>%
   summarise(maximum = max(Fatalities)) %>% 
   arrange(desc(maximum)) #Ordering the values from the highest to the lowest
+
+highest
 ```
 
 From the tibble above, we can see that Iraq has had the highest number of fatalities resulting from terrorism, followed by Nigeria then Afghanistan.
 
-###2. Has global terrorism reduced or increased over the years?(line chart)
+###2. Has global terrorism reduced or increased over the years (Between 2000-2017) in the top 5 countries with the highest fatalities? From the above tibble, we can see that the top nine countries are Iraq, Nigeria, Afghanistan, Algeria, Syria, Nicaragua, USA, Pakistan, Peru and El Salvador
+
+```{r}
+highest_terrorism <- highest %>% 
+  filter(maximum >= 3924)
+
+lowest_terrorism <- highest %>% 
+  filter(maximum == 0)
+
+highest_terrorism
+```
+
+```{r Merge dataset}
+highest_terrorism <- highest_terrorism %>%
+  left_join(terrorism_fatalities, by = "Country")
+
+highest_terrorism
+```
 
 
-###3. How do terrorism fatalities compare across countries in the world? (Choropleth map)
+```{r plot}
+highest_terrorism <- highest_terrorism %>% 
+  filter(Year >= 2000)
+ggplot(highest_terrorism, aes(x = Year, y = Fatalities, group=Country, color=Country)) + 
+  geom_line()
+
+```
+
+###3. What’s the life satisfaction and GDP of the regions highly/lowly affected by terrorism? Compare
+
+```{r Import Data, message = FALSE}
+#Import dataset containing life satisfaction and gdp of countries
+gdp_happiness <- readr::read_csv("gdp-vs-life-satisfaction.csv", show_col_types = FALSE)
+```
+
+```{r}
+gdp_happiness 
+```
+
+```{r Merge dataset}
+joined_data <- highest_terrorism %>%
+  left_join(gdp_happiness, by = "Country")
+joined_data
+```
+
+```{r}
+comparison_data <- joined_data %>%
+  group_by(Country) %>% 
+  summarise(
+    avg_satisfaction = mean(Life_Satisfaction, na.rm = TRUE),
+    avg_fatalities = mean(Fatalities, na.rm = TRUE),
+    avg_gdp = mean(GDP, na.rm = TRUE))
+comparison_data
+```
+
+```{r}
+#import library gridExtra
+library(gridExtra)
+
+fatalities_plot <- comparison_data %>% 
+  ggplot(mapping = aes(x = Country, y = avg_fatalities))+
+  geom_bar(stat="identity", width=1, color="white",
+         fill=rgb(0.1,0.4,0.5,0.7))
+
+satisfaction_plot <- comparison_data %>% 
+  ggplot(mapping = aes(x = Country, y = avg_satisfaction))+
+  geom_bar(stat="identity", width=1, color="white",
+         fill=rgb(0.1,0.8,0.1,0.7))
+ 
+gdp_plot <- comparison_data %>% 
+  ggplot(mapping = aes(x = Country, y = avg_gdp))+
+  geom_bar(stat="identity", width=1, color="white",
+         fill=rgb(0.8,0.4,0.1,0.7)) 
+ 
+# Use grid.arrange to put plots in columns
+grid.arrange(fatalities_plot,satisfaction_plot,gdp_plot, ncol=3)
+```
+
+
+###4. How do terrorism fatalities compare across countries in the world? (Choropleth map)
+
+```{r}
+terrorism_fatalities
+```
 
 
 Compute the average terrorism rate for each country
 ```{r}
-terrorism_fatalities <- terrorism_global %>% 
-  group_by(Entity) %>% 
-  summarise(Fatalities=mean(Fatalities, na.rm = TRUE))
+#Group by Country and find the terrorism rate for each country
+terrorism_fatalities <- terrorism_fatalities %>% 
+  group_by(Country) %>% 
+  summarise(Fatalities=mean(Fatalities))
 ```
 
-Rename 'Entity' column to 'region'.
+Rename 'Country' column to 'region'.
 ```{r Rename}
 terrorism_fatalities <- terrorism_fatalities %>%
-  rename(region = Entity)
+  rename(region = Country)
 ```
 
-Visualize
+Plot the choropleth map
 ```{r Choropleth Map}
-library(ggplot2)
-library(dplyr)
-#library(ggrepel)
+#Convert from tibble to dataframe
 terrorism_fatalities <- as.data.frame(terrorism_fatalities)
 
+#Data containing longitudes and latitudes to be used in mapping the data
 global_map <- map_data("world")
 
+#Merge the "world" map_data to the terrorism_fatalities dataset
 merged_data <- left_join(global_map, terrorism_fatalities, by = "region")
-#joined_data <- merged_data %>% filter(!is.na(fact_join$Fatalities))
 
-#options(ggrepel.max.overlaps = Inf)
+#Plot the map
 ggplot(merged_data, aes(long, lat, label = region ,group = group))+
-  #geom_text_repel(segment.alpha = 0)+
   geom_polygon(aes(fill = Fatalities), color = "white")+
   ggtitle("Fatalities Resulting From Terrorism Activities Across the World")+
   scale_fill_viridis_c(option = "C")+
@@ -170,10 +251,6 @@ ggplot(merged_data, aes(long, lat, label = region ,group = group))+
   
 
 ```
-
-
-4. What’s the happiness index and GDP of the country highly affected by terrorism? Compare
-
 
 
 
