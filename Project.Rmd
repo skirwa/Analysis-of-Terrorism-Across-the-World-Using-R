@@ -15,16 +15,16 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 
-This project seeks to understand how terrorism has impacted the world.
+This project seeks to understand how terrorism has impacted the world.\
 
-To accomplish this project, the following questions will be used;
-1. Which region has highly been affected by terrorism?
-2. Has global terrorism, in the top 5 most affected countries, reduced or increased over the years (2000-2017)?
-3. Which region has highly been affected by terrorism?
-4. What’s the happiness index and GDP of the country highly affected by terrorism? Compare
+To accomplish this project, the following questions will be used:\
+1. Which region has highly been affected by terrorism?\
+2. Has global terrorism, in the top 5 most affected countries, reduced or increased over the years (2000-2017)?\
+3. Which countries have the highest life satisfaction? What's their GDP?\
+4. What’s the life satisfaction of the regions highly affected by terrorism? Do the regions highly affected by terrorism have high life satisfaction or low?\
+5. How do terrorism fatalities compare across countries in the world?\
 
-## Load Packages and Import Data
-The chunk below contains the packages that will be needed for this project.
+## Load Packages and Import Data.
 
 ```{r Load Packages, message=FALSE}
 #Load necessary packages
@@ -45,9 +45,10 @@ as_tibble(terrorism_fatalities)
 head(terrorism_fatalities)
 ```
 
-##Data Transformation
+## Data Transformation
 
-Check for the number of rows and columns
+Check the number of rows and columns.\
+
 ```{r Rows}
 #Number of rows
 nrow(terrorism_fatalities)
@@ -59,6 +60,8 @@ ncol(terrorism_fatalities)
 ```
 
 
+Check if there are any missing values.\
+
 ```{r Missing Values}
 #Check for missing values
 #sum(is.na(terrorism_fatalities))
@@ -66,21 +69,24 @@ ncol(terrorism_fatalities)
 colSums(is.na(terrorism_fatalities))
 ```
 
-The terrorism fatalities dataset has no missing values.
+The terrorism fatalities dataset has no missing values.\
 
-Check for unique values in the 'Entity' column.
+Check for unique values in the 'Entity' column.\
+
 ```{r}
 #Unique values in the dataset
 unique(terrorism_fatalities[c("Entity")])
 ```
 
-Rename 'Entity' column to 'Country'.
+Rename 'Entity' column to 'Country'.\
+
 ```{r Rename}
 terrorism_fatalities <- terrorism_fatalities %>%
   rename(Country = Entity)
 ```
 
-Summary statistics
+Summary statistics of the dataset.\
+
 ```{r Summary}
 summary_stat <- terrorism_fatalities %>% 
   group_by(Country) %>%
@@ -96,10 +102,13 @@ summary_stat
 ```
 
 
-Since our dataset is tidy, we will go ahead and analyse our data based on our research questions.
-###1. Which region has highly been affected by terrorism?
+**Since our dataset is tidy, we will go ahead and analyse our data based on our research questions.**\
 
-Reorder the dataset to check which country has had the highest number of fatalities as a result of terrorism
+## Analysis of the data
+
+### 1. Which region has highly been affected by terrorism?
+
+Reorder the dataset to check which country has had the highest number of fatalities as a result of terrorism.\
 
 ```{r Arrange}
 highest <- terrorism_fatalities %>% 
@@ -110,18 +119,23 @@ highest <- terrorism_fatalities %>%
 highest
 ```
 
-From the tibble above, we can see that Iraq has had the highest number of fatalities resulting from terrorism, followed by Nigeria then Afghanistan.
+**From the tibble above, we can see that Iraq has had the highest number of fatalities resulting from terrorism, followed by Nigeria then Afghanistan.**\
+
+Check the regions that have been lowly affected by terrorism.\
+
 ```{r}
 lowest <- highest %>% 
   filter(maximum < 1)
 
 lowest
 ```
-The countries in the tibble above have had the least/no fatalities resulting from terrorism. This implies that these countries have had least/no terrorism attacks.
 
-###2. Has global terrorism, in the top 5 most affected countries, reduced or increased over the years (2000-2017)? 
+**The countries in the tibble above have had the least/no fatalities resulting from terrorism. This implies that these countries have had least/no terrorism attacks.**\
 
-Find the top five countries affected by terrorism.
+### 2. Has global terrorism, in the top 5 most affected countries, reduced or increased over the years (2000-2017)? 
+
+Find the top five countries affected by terrorism.\
+
 ```{r}
 highest_terrorism <- highest %>% 
   filter(maximum >= 3924)
@@ -129,7 +143,7 @@ highest_terrorism <- highest %>%
 highest_terrorism
 ```
 
-
+**The top 5 most affected countries by terrorism are Iraq, Nigeria, Afghanistan, Algeria and Syria.**\
 
 ```{r Merge dataset}
 terrorism_high <- highest_terrorism %>%
@@ -138,6 +152,7 @@ terrorism_high <- highest_terrorism %>%
 terrorism_high
 ```
 
+Visualize the trend in terrorism fatalities of the top 5 most affected countries between Years 2000 and 2017.\
 
 ```{r Geom_line, echo=FALSE}
 plot_data <- terrorism_high %>% 
@@ -152,7 +167,10 @@ ggplot(terrorism_high, aes(x = Year, y = Fatalities, group=Country, color=Countr
 
 ```
 
-###3. Which countries have the highest life satisfaction? What's their GDP?
+**From the chart above, we can see that the number of fatalities as a result of terrorism have been on the rise over the years, for the top five most affected countries.**\ 
+
+### 3. Which countries have the highest life satisfaction?
+
 ```{r}
 #Import dataset containing life satisfaction and gdp of countries
 gdp_happiness <- readr::read_csv("gdp-vs-life-satisfaction.csv", show_col_types = FALSE)
@@ -160,7 +178,8 @@ gdp_happiness <- readr::read_csv("gdp-vs-life-satisfaction.csv", show_col_types 
 gdp_happiness 
 ```
 
-Join 'gdp_happiness' dataset with 'terrorism_fatalities' dataset
+Join 'gdp_happiness' dataset with 'terrorism_fatalities' dataset.\
+
 ```{r}
 merged_data <- gdp_happiness %>% 
   full_join(terrorism_fatalities, by = "Country")
@@ -168,8 +187,9 @@ merged_data <- gdp_happiness %>%
 merged_data
 ```
 
-Compute the average life satisfaction, fatalities and GDP of each country
-```{r}
+Compute the average life satisfaction, fatalities and GDP of each country.\
+
+```{r Average}
 average_data <- merged_data %>% 
   group_by(Country) %>% 
   summarise(
@@ -180,7 +200,7 @@ average_data <- merged_data %>%
 average_data
 ```
 
-Which countries have the highest life satisfaction?
+Which countries have the highest life satisfaction?\
 
 ```{r}
 high_to_low <- average_data %>% 
@@ -190,12 +210,11 @@ high_to_low <- average_data %>%
 high_to_low
 ```
 
-Denmark has the highest life satisfaction then Norway and Switzerland.
+**Denmark has had the highest average life satisfaction then Norway and Switzerland. The countries most affected by terrorism do not appear in the list of countries with high average life satisfaction.**\
 
-###4. What’s the life satisfaction of the regions highly affected by terrorism? Do the regions highly affected by terrorism have high life satisfaction and GDP or low?
+### 4. What’s the life satisfaction of the regions highly affected by terrorism? Do the regions highly affected by terrorism have high life satisfaction and GDP or low?
 
 ```{r}
-
 joined_data <- highest_terrorism %>% 
   left_join(merged_data, by = "Country")
 
@@ -212,6 +231,7 @@ comparison_data <- joined_data %>%
     avg_gdp = mean(GDP, na.rm = TRUE))
 comparison_data
 ```
+**The country with the highest average life satisfaction, Denmark, had a value of 7.695750. On the other hand, the top 5 countries that have had high terrorism fatalities, have average life satisfaction values ranging from 5.555167-3.806700.This implies that the aforesaid countries have low life satisfaction.**\
 
 ```{r Geom_bar}
 #import library gridExtra to help in joining the plots
@@ -241,12 +261,12 @@ grid.arrange(fatalities_plot,satisfaction_plot,gdp_plot, nrow = 3,
              Highly Affected by Terrorism")
 ```
 
+**We can tell from the chart above that the country with lower terrorism fatalities (Algeria) have high GDP per capita and high life satisfaction, and the country with the higher terrorism fatalities (Iraq) have slightly higher GDP per capita and life satisfaction. However, to draw a conclusive assumption on the effect of terrorism on life satisfaction and GDP per capita, a larger sample size of the data is needed.**\
 
-###4. How do terrorism fatalities compare across countries in the world?
+### 5. How do terrorism fatalities compare across countries in the world?
 
+Compute the average terrorism rate for each country.\
 
-
-Compute the average terrorism rate for each country
 ```{r}
 #Group by Country and find the terrorism rate for each country
 terrorism_fatalities <- terrorism_fatalities %>% 
@@ -254,13 +274,15 @@ terrorism_fatalities <- terrorism_fatalities %>%
   summarise(Fatalities=mean(Fatalities))
 ```
 
-Rename 'Country' column to 'region'.
+Rename 'Country' column to 'region'.\
+
 ```{r}
 terrorism_fatalities <- terrorism_fatalities %>%
   rename(region = Country)
 ```
 
-Plot a choropleth map to show how terrorism compare across countries.
+Plot a choropleth map to show how terrorism compare across countries.\
+
 ```{r Choropleth Map}
 #Convert from tibble to dataframe
 terrorism_fatalities <- as.data.frame(terrorism_fatalities)
@@ -293,7 +315,7 @@ ggplot(merged_data, aes(long, lat, label = region ,group = group))+
 
 ```
 
-
+**From the map above, we can compare the fatalities as a result terrorism from country to country.**
 
 
 
