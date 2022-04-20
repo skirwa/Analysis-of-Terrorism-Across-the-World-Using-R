@@ -15,23 +15,25 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 
-This project seeks to understand how terrorism has impacted the world.\
+This project seeks to understand how terrorism has impacted the world.\ 
 
-To accomplish this project, the following questions will be used:\
-1. Which region has highly been affected by terrorism?\
-2. Has global terrorism, in the top 5 most affected countries, reduced or increased over the years (2000-2017)?\
-3. Which countries have the highest life satisfaction? What's their GDP?\
-4. What’s the life satisfaction of the regions highly affected by terrorism? Do the regions highly affected by terrorism have high life satisfaction or low?\
-5. How do terrorism fatalities compare across countries in the world?\
+To accomplish this project, we seek to address the following questions:\
+1. Which regions have been most/least affected by terrorism? Has terrorism, in the top 5 most affected countries, reduced or increased over the years (2000-2017)?\
+2. What is the impact of terrorism on countries most/least affected by terrorism? Is the impact positive or negative?\
+3. How do terrorism fatalities compare across the world?\
+4. What is the most prevalent type of terrorism?
+5. Which sectors and nationalities are highly targeted by terrorism activities?\
+
+# Exploratory Data Analysis (EDA) #
 
 ## Load Packages and Import Data.
 
 ```{r Load Packages, message=FALSE}
 #Load necessary packages
-library(tidyverse) #For performing data transformation
-library(ggplot2) #For creating charts
-library(readr) #For importing data
-library(dplyr) #For performing data transformation
+library(tidyverse) 
+library(ggplot2) 
+library(readr) 
+library(dplyr) 
 ```
 
 ```{r Import Data, message = FALSE}
@@ -45,7 +47,6 @@ as_tibble(terrorism_fatalities)
 head(terrorism_fatalities)
 ```
 
-## Data Transformation
 
 Check the number of rows and columns.\
 
@@ -102,13 +103,12 @@ summary_stat
 ```
 
 
-**Since our dataset is tidy, we will go ahead and analyse our data based on our research questions.**\
 
-## Analysis of the data
+# Data Transformation #
 
-### 1. Which region has highly been affected by terrorism?
+### 1. Which regions have been most/least affected by terrorism? Has terrorism, in the top 5 most affected countries, reduced or increased over the years (2000-2017)?\
 
-Reorder the dataset to check which country has had the highest number of fatalities as a result of terrorism.\
+Reorder the dataset to check which countries have had the highest number of fatalities as a result of terrorism.\
 
 ```{r Arrange}
 highest <- terrorism_fatalities %>% 
@@ -119,26 +119,26 @@ highest <- terrorism_fatalities %>%
 highest
 ```
 
-**From the tibble above, we can see that Iraq has had the highest number of fatalities resulting from terrorism, followed by Nigeria then Afghanistan.**\
+**Above, we can see that Iraq has had the highest number of fatalities resulting from terrorism, followed by Nigeria, Afghanistan, Algeria and Syria.**\
 
-Check the regions that have been lowly affected by terrorism.\
+The regions that have been least affected by terrorism.\
 
 ```{r}
-lowest <- highest %>% 
-  filter(maximum < 1)
+lowest <- terrorism_fatalities %>% 
+  group_by(Country) %>%
+  summarise(minimum = max(Fatalities)) %>% 
+  arrange(minimum) 
 
 lowest
 ```
 
-**The countries in the tibble above have had the least/no fatalities resulting from terrorism. This implies that these countries have had least/no terrorism attacks.**\
+**The five countries that have been least affected by terrorism are Antigua & Barbuda, Benin, Brunei, Falkland Islands and French Polynesia.**\
 
-### 2. Has global terrorism, in the top 5 most affected countries, reduced or increased over the years (2000-2017)? 
-
-Find the top five countries affected by terrorism.\
+The top five countries that have been most affected by terrorism.\
 
 ```{r}
-highest_terrorism <- highest %>% 
-  filter(maximum >= 3924)
+highest_terrorism <- highest %>%
+filter(maximum >= 3924)
 
 highest_terrorism
 ```
@@ -167,9 +167,13 @@ ggplot(terrorism_high, aes(x = Year, y = Fatalities, group=Country, color=Countr
 
 ```
 
-**From the chart above, we can see that the number of fatalities as a result of terrorism have been on the rise over the years, for the top five most affected countries.**\ 
+**From the chart above, we can see that the number of fatalities as a result of terrorism were on the rise over the years for the top five most affected countries, and they started declining towards 2017.**\ 
 
-### 3. Which countries have the highest life satisfaction?
+### 2. What is the impact of terrorism on countries most/least affected by terrorism? Is the impact positive or negative?
+
+To determine the impact of terrorism, we compared the life satisfaction and GDP Per Capita of the countries most affected by terrorism with the countries least affected by terrorism.\
+
+Load the dataset containing the GDP Per Capita and Life Satisfaction of each country.\
 
 ```{r}
 #Import dataset containing life satisfaction and gdp of countries
@@ -200,7 +204,7 @@ average_data <- merged_data %>%
 average_data
 ```
 
-Which countries have the highest life satisfaction?\
+The countries with the highest life satisfaction\
 
 ```{r}
 high_to_low <- average_data %>% 
@@ -212,10 +216,19 @@ high_to_low
 
 **Denmark has had the highest average life satisfaction then Norway and Switzerland. The countries most affected by terrorism do not appear in the list of countries with high average life satisfaction.**\
 
-### 4. What’s the life satisfaction of the regions highly affected by terrorism? Do the regions highly affected by terrorism have high life satisfaction and GDP or low?
+Filter top five most affected and least affected countries by terrorism? 
 
 ```{r}
-joined_data <- highest_terrorism %>% 
+countries_ranked <- highest %>%
+  select(Country, maximum) %>% 
+  filter(Country %in% c("Iraq", "Nigeria", "Afghanistan", "Algeria", "Syria", 
+                        "Benin", "Iceland", "Mauritius", "Brunei", "Seychelles"))
+
+countries_ranked
+```
+
+```{r}
+joined_data <- countries_ranked %>% 
   left_join(merged_data, by = "Country")
 
 joined_data
@@ -231,17 +244,17 @@ comparison_data <- joined_data %>%
     avg_gdp = mean(GDP, na.rm = TRUE))
 comparison_data
 ```
-**The country with the highest average life satisfaction, Denmark, had a value of 7.695750. On the other hand, the top 5 countries that have had high terrorism fatalities, have average life satisfaction values ranging from 5.555167-3.806700.This implies that the aforesaid countries have low life satisfaction.**\
+The country with the highest average life satisfaction, Denmark, had a value of 7.695750. On the other hand, the top 5 countries that have had high terrorism fatalities, have average life satisfaction values ranging from 5.555167-3.806700.This implies that the aforesaid countries have low life satisfaction.\
 
 ```{r Geom_bar}
 #import library gridExtra to help in joining the plots
 library(gridExtra)
 
-fatalities_plot <- comparison_data %>% 
-  ggplot(mapping = aes(x = avg_fatalities, y = Country))+
-  geom_bar(stat="identity", width=1, color="white",
-         fill=rgb(0.8,0.4,0.1,0.7))+
-  xlab("Number of Fatalities")
+#fatalities_plot <- comparison_data %>% 
+  #ggplot(mapping = aes(x = avg_fatalities, y = Country))+
+  #geom_bar(stat="identity", width=1, color="white",
+         #fill=rgb(0.8,0.4,0.1,0.7))+
+  #xlab("Number of Fatalities")
 
 satisfaction_plot <- comparison_data %>% 
   ggplot(mapping = aes(x = avg_satisfaction, y = Country))+
@@ -256,14 +269,14 @@ gdp_plot <- comparison_data %>%
   xlab("GDP Per Capita")
  
 # Use grid.arrange to put plots in columns
-grid.arrange(fatalities_plot,satisfaction_plot,gdp_plot, nrow = 3, 
+grid.arrange(gdp_plot,satisfaction_plot, nrow = 2, 
              top = "Comparison of Life Satisfaction and GDP of Countries 
-             Highly Affected by Terrorism")
+             Most/Least Affected by Terrorism")
 ```
 
-**We can tell from the chart above that the country with lower terrorism fatalities (Algeria) have high GDP per capita and high life satisfaction, and the country with the higher terrorism fatalities (Iraq) have slightly higher GDP per capita and life satisfaction. However, to draw a conclusive assumption on the effect of terrorism on life satisfaction and GDP per capita, a larger sample size of the data is needed.**\
+We can tell from the chart above that the countries that were **least affected by terrorism (Iceland, Mauritius, Brunei and Seychelles) have high GDP per capita** compared to the countries that were most affected by terrorism. Afghanistan, Iraq and Nigeria have low GDP per capita. More so, countries **least affected by terrorism (Iceland and Mauritius) have higher life satisfaction** compared  to countries most affected by terrorism. Therefore, from the outcome above, we can infer that presence of terrorism activities has a negative impact on countries. 
 
-### 5. How do terrorism fatalities compare across countries in the world?
+### 3. How do terrorism fatalities compare across the world?
 
 Compute the average terrorism rate for each country.\
 
@@ -315,7 +328,64 @@ ggplot(merged_data, aes(long, lat, label = region ,group = group))+
 
 ```
 
-**From the map above, we can compare the fatalities as a result terrorism from country to country.**
+From the map above, we can compare the fatalities as a result terrorism across the globe. We can see that some regions in Africa and Asia have highly been affected by terrorism.
+
+### 4. What is the most prevalent type of terrorism?
+
+```{r}
+#Import dataset containing the types of terrorism
+types_of_terrorism <- readr::read_csv("types-of-terrorism.csv", show_col_types = FALSE)
+
+types_of_terrorism 
+```
+
+```{r}
+#Unique values in the dataset
+unique(types_of_terrorism[c("terrorism_type")])
+```
+
+There are nine major types of terrorism as shown above.
+
+
+```{r}
+rank_terrorism <- types_of_terrorism %>%
+  group_by(terrorism_type) %>% 
+  summarise(rank_terrorism = n())%>% 
+  arrange(desc(rank_terrorism))
+
+rank_terrorism
+```
+
+** Bombing/Explosion has been the most prevalent type of terrorism
+
+### 5. Which sectors and nationalities are highly targeted by terrorism activities?\
+
+```{r}
+rank_sector <- types_of_terrorism %>%
+  group_by(targeted_sectors) %>% 
+  summarise(rank_sector = n())%>% 
+  arrange(desc(rank_sector))
+
+rank_sector
+```
+
+The top five sectors that have been a target of terrorism activities are private citizens, military, police, government and business respectively.
+
+```{r}
+rank_nationalities <- types_of_terrorism %>%
+  group_by(targeted_nationalities) %>% 
+  summarise(rank_nationalities = n())%>% 
+  arrange(desc(rank_nationalities))
+
+rank_nationalities
+```
+
+The top five nationalities that have been a target of terrorism activities are Iraq, Pakistan, Afghanistan, India and Columbia.
+
+# Conclusion #
+
+From the analysis above, it is evident that Asian countries (i.e Iraq, Afghanistan, Syria and Pakistan) have mostly been affected by terrorism. More so, we can infer that the presence of terrorism activities has had a negative impact, not only on the countries in general (i.e the GDP Per Capita of the countries), but also on the wellbeing of the citizens (i.e Life Satisfaction) belonging to those countries.
+
 
 
 
