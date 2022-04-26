@@ -18,10 +18,10 @@ knitr::opts_chunk$set(echo = TRUE)
 This project seeks to understand how terrorism has impacted the world.\ 
 
 To accomplish this project, we seek to address the following questions:\
-1. Which regions have been most/least affected by terrorism? Has terrorism, in the top 5 most affected countries, reduced or increased over the years (2000-2017)?\
-2. What is the impact of terrorism on countries most/least affected by terrorism? Is the impact positive or negative?\
-3. How do terrorism fatalities compare across the world?\
-4. What is the most prevalent type of terrorism?
+1. How do terrorism fatalities compare across the world?\
+2. Which countries have been most/least affected by terrorism? Has terrorism, in the top 5 most affected countries, reduced or increased over the years (2000-2017)?\
+3. What is the impact of terrorism on countries most/least affected by terrorism? Is the impact positive or negative?\
+4. What is the most prevalent type of terrorism?\
 5. Which sectors and nationalities are highly targeted by terrorism activities?\
 
 # Exploratory Data Analysis (EDA) #
@@ -48,7 +48,7 @@ head(terrorism_fatalities)
 ```
 
 
-Check the number of rows and columns.\
+Check the number of rows and columns.
 
 ```{r Rows}
 #Number of rows
@@ -61,7 +61,7 @@ ncol(terrorism_fatalities)
 ```
 
 
-Check if there are any missing values.\
+Check if there are any missing values.
 
 ```{r Missing Values}
 #Check for missing values
@@ -70,23 +70,23 @@ Check if there are any missing values.\
 colSums(is.na(terrorism_fatalities))
 ```
 
-The terrorism fatalities dataset has no missing values.\
+The terrorism fatalities dataset has no missing values.
 
-Check for unique values in the 'Entity' column.\
+Check for unique values in the 'Entity' column.
 
 ```{r}
 #Unique values in the dataset
 unique(terrorism_fatalities[c("Entity")])
 ```
 
-Rename 'Entity' column to 'Country'.\
+Rename 'Entity' column to 'Country'.
 
 ```{r Rename}
 terrorism_fatalities <- terrorism_fatalities %>%
   rename(Country = Entity)
 ```
 
-Summary statistics of the dataset.\
+Summary statistics of the dataset.
 
 ```{r Summary}
 summary_stat <- terrorism_fatalities %>% 
@@ -106,7 +106,61 @@ summary_stat
 
 # Data Transformation #
 
-### 1. Which regions have been most/least affected by terrorism? Has terrorism, in the top 5 most affected countries, reduced or increased over the years (2000-2017)?\
+### 1. How do terrorism fatalities compare across the world?
+
+Compute the average terrorism rate for each country.\
+
+```{r}
+#Group by Country and find the terrorism rate for each country
+choropleth_data <- terrorism_fatalities %>% 
+  group_by(Country) %>% 
+  summarise(Fatalities=mean(Fatalities))
+```
+
+Rename 'Country' column to 'region'.\
+
+```{r}
+choropleth_data <- choropleth_data %>%
+  rename(region = Country)
+```
+
+Plot a choropleth map to show how terrorism compare across countries.\
+
+```{r Choropleth Map}
+#Convert from tibble to dataframe
+choropleth_data <- as.data.frame(choropleth_data)
+
+#Data containing longitudes and latitudes to be used in mapping the data
+global_map <- map_data("world")
+
+#Merge the "world" map_data to the terrorism_fatalities dataset
+merged_data <- left_join(global_map, choropleth_data, by = "region")
+
+#Plot the map
+ggplot(merged_data, aes(long, lat, label = region ,group = group))+
+  geom_polygon(aes(fill = Fatalities), color = "white")+
+  ggtitle("Fatalities Resulting From Terrorism Activities Across the World")+
+  scale_fill_viridis_c(option = "C")+
+  theme(#panel.background = element_rect(fill = "white"),
+        #plot.background = element_rect(fill = "white"),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.ticks = element_blank(),
+        #rect = element_blank(),
+        #panel.border =  element_blank(),
+        legend.title= element_text(
+          hjust = 0.4 ,vjust=0.3, size=10,family = "Times"),
+        legend.text = element_text(
+          hjust = 0.4 ,vjust=2, size=8,family = "Times"))
+  
+
+```
+
+From the map above, we can compare the fatalities as a result terrorism across the globe. We can see that some regions in Africa and Asia have highly been affected by terrorism.
+
+### 2. Which countries have been most/least affected by terrorism? Has terrorism, in the top 5 most affected countries, reduced or increased over the years (2000-2017)?\
 
 Reorder the dataset to check which countries have had the highest number of fatalities as a result of terrorism.\
 
@@ -121,7 +175,7 @@ highest
 
 **Above, we can see that Iraq has had the highest number of fatalities resulting from terrorism, followed by Nigeria, Afghanistan, Algeria and Syria.**\
 
-The regions that have been least affected by terrorism.\
+The countries that have been least affected by terrorism.\
 
 ```{r}
 lowest <- terrorism_fatalities %>% 
@@ -169,7 +223,7 @@ ggplot(terrorism_high, aes(x = Year, y = Fatalities, group=Country, color=Countr
 
 **From the chart above, we can see that the number of fatalities as a result of terrorism were on the rise over the years for the top five most affected countries, and they started declining towards 2017.**\ 
 
-### 2. What is the impact of terrorism on countries most/least affected by terrorism? Is the impact positive or negative?
+### 3. What is the impact of terrorism on countries most/least affected by terrorism? Is the impact positive or negative?
 
 To determine the impact of terrorism, we compared the life satisfaction and GDP Per Capita of the countries most affected by terrorism with the countries least affected by terrorism.\
 
@@ -235,6 +289,7 @@ joined_data
 ```
 
 
+
 ```{r}
 comparison_data <- joined_data %>%
   group_by(Country) %>% 
@@ -276,59 +331,6 @@ grid.arrange(gdp_plot,satisfaction_plot, nrow = 2,
 
 We can tell from the chart above that the countries that were **least affected by terrorism (Iceland, Mauritius, Brunei and Seychelles) have high GDP per capita** compared to the countries that were most affected by terrorism. Afghanistan, Iraq and Nigeria have low GDP per capita. More so, countries **least affected by terrorism (Iceland and Mauritius) have higher life satisfaction** compared  to countries most affected by terrorism. Therefore, from the outcome above, we can infer that presence of terrorism activities has a negative impact on countries. 
 
-### 3. How do terrorism fatalities compare across the world?
-
-Compute the average terrorism rate for each country.\
-
-```{r}
-#Group by Country and find the terrorism rate for each country
-terrorism_fatalities <- terrorism_fatalities %>% 
-  group_by(Country) %>% 
-  summarise(Fatalities=mean(Fatalities))
-```
-
-Rename 'Country' column to 'region'.\
-
-```{r}
-terrorism_fatalities <- terrorism_fatalities %>%
-  rename(region = Country)
-```
-
-Plot a choropleth map to show how terrorism compare across countries.\
-
-```{r Choropleth Map}
-#Convert from tibble to dataframe
-terrorism_fatalities <- as.data.frame(terrorism_fatalities)
-
-#Data containing longitudes and latitudes to be used in mapping the data
-global_map <- map_data("world")
-
-#Merge the "world" map_data to the terrorism_fatalities dataset
-merged_data <- left_join(global_map, terrorism_fatalities, by = "region")
-
-#Plot the map
-ggplot(merged_data, aes(long, lat, label = region ,group = group))+
-  geom_polygon(aes(fill = Fatalities), color = "white")+
-  ggtitle("Fatalities Resulting From Terrorism Activities Across the World")+
-  scale_fill_viridis_c(option = "C")+
-  theme(#panel.background = element_rect(fill = "white"),
-        #plot.background = element_rect(fill = "white"),
-        axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
-        axis.ticks = element_blank(),
-        #rect = element_blank(),
-        #panel.border =  element_blank(),
-        legend.title= element_text(
-          hjust = 0.4 ,vjust=0.3, size=10,family = "Times"),
-        legend.text = element_text(
-          hjust = 0.4 ,vjust=2, size=8,family = "Times"))
-  
-
-```
-
-From the map above, we can compare the fatalities as a result terrorism across the globe. We can see that some regions in Africa and Asia have highly been affected by terrorism.
 
 ### 4. What is the most prevalent type of terrorism?
 
